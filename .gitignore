@@ -1,0 +1,148 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
+.virtualenv/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# PyCharm
+.idea/
+
+# Data files (large datasets)
+*.csv
+*.parquet
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# But keep example/small data files if needed
+!example_data.csv
+
+# Model files - INCLUDE trained models (they're small, <2MB total)
+# This allows users to use pre-trained models without retraining
+!output/models/**/*.json
+!output/models/**/*.pkl
+!output/models/**/*.joblib
+
+# Exclude large model formats if they exist
+*.bin
+*.h5
+*.hdf5
+*.onnx
+
+# Output directories (generated files)
+logs/
+checkpoints/
+
+# But keep the directory structure
+!output/.gitkeep
+!output/models/.gitkeep
+!output/models/xgboost/.gitkeep
+!output/models/lightgbm/.gitkeep
+!output/models/catboost/.gitkeep
+!output/models/ensemble/.gitkeep
+
+# Plots and visualizations
+*.png
+*.jpg
+*.jpeg
+*.pdf
+*.svg
+
+# But keep documentation images
+!docs/**/*.png
+!docs/**/*.jpg
+
+# Logs
+*.log
+*.out
+*.err
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# profiling
+*.prof
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Secrets
+secrets.json
+credentials.json
+*.pem
+*.key
