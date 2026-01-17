@@ -181,7 +181,7 @@ def _hurst_exponent(ts: np.ndarray, max_lag: int = 20) -> float:
         valid_tau = [tau[i] for i in valid_indices]
         
         poly = np.polyfit(np.log(valid_lags), np.log(valid_tau), 1)
-        return poly[0] * 2.0
+        return poly[0]
     except:
         return np.nan
 
