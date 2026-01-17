@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pandas
+numpy
+yfinance
+ta-lib
+xgboost
+lightgbm
+catboost
+scikit-learn
+python-multipart
+httpx
+seaborn

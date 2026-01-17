@@ -22,12 +22,12 @@ import numpy as np
 from typing import Optional
 
 # Import all feature modules
-from price_based_features import create_price_based_features
-from volume_features import create_volume_features
-from volatility_features import create_volatility_features
-from technical_features import create_technical_features
-from regime_features import create_regime_features
-from regime_dependent_features import create_regime_dependent_features
+from .price_based_features import create_price_based_features
+from .volume_features import create_volume_features
+from .volatility_features import create_volatility_features
+from .technical_features import create_technical_features
+from .regime_features import create_regime_features
+from .regime_dependent_features import create_regime_dependent_features
 
 
 def create_all_features(
