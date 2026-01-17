@@ -607,6 +607,9 @@ def main():
         for feat in selected_features:
             f.write(f"{feat}\n")
     print(f"Saved selected features list to {selected_features_path}")
+
+    # Save metrics
+    save_model_and_results(model_selected, metrics_selected, output_dir=OUTPUT_DIR)
     
     # ========== FINAL COMPARISON ==========
     print("\n" + "="*60)
