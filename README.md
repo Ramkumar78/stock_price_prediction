@@ -86,16 +86,23 @@ pip install scikit-learn matplotlib seaborn
 
 ### 2. Docker Deployment
 
-The application works best when run as a full-stack Dockerized application. This spins up the backend API and the frontend dashboard.
+The application works best when run as a full-stack Dockerized application using Docker Compose. This automatically builds and starts both the backend API and the frontend dashboard.
 
 ```bash
 # Build and run the application
 docker-compose up --build
 ```
 
-Access the application:
-- **Dashboard**: http://localhost:3000
-- **API Documentation**: http://localhost:8000/docs
+#### Accessing the Application
+
+Once the containers are running (you will see logs indicating the server started), open your web browser and navigate to:
+
+- **Frontend Dashboard**: http://localhost:3000
+  - This is the main interface where you can view predictions, charts, and trigger data updates.
+- **Backend API Documentation**: http://localhost:8000/docs
+  - Interactive Swagger UI to test API endpoints directly.
+
+> **Note**: If port 3000 or 8000 is already in use on your machine, you may need to modify the port mapping in `docker-compose.yml`.
 
 ### 3. Download Data (Manual / Docker)
 
