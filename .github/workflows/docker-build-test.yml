@@ -1,0 +1,76 @@
+name: Docker Build and Training Pipeline Test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Build Docker image
+        run: docker build -t spy-backend .
+
+      - name: Run Docker container
+        run: |
+          docker run -d --name spy-backend -p 8000:8000 spy-backend
+          sleep 10  # Wait for the server to start
+
+      - name: Wait for API to be ready
+        run: |
+          # Retry loop to check if the API is responding
+          for i in {1..30}; do
+            if curl -s http://localhost:8000/docs > /dev/null; then
+              echo "API is up!"
+              exit 0
+            fi
+            echo "Waiting for API..."
+            sleep 2
+          done
+          echo "API failed to start."
+          docker logs spy-backend
+          exit 1
+
+      - name: Refresh Data
+        run: |
+          response=$(curl -s -w "%{http_code}" -X POST http://localhost:8000/data/refresh)
+          http_code=${response: -3}
+          echo "Response: $response"
+          if [ "$http_code" -ne 200 ]; then
+            echo "Data refresh failed with status $http_code"
+            docker logs spy-backend
+            exit 1
+          fi
+
+      - name: Generate Features
+        run: |
+          response=$(curl -s -w "%{http_code}" -X POST http://localhost:8000/features/generate)
+          http_code=${response: -3}
+          echo "Response: $response"
+          if [ "$http_code" -ne 200 ]; then
+            echo "Feature generation failed with status $http_code"
+            docker logs spy-backend
+            exit 1
+          fi
+
+      - name: Train LightGBM Model
+        run: |
+          response=$(curl -s -w "%{http_code}" -X POST http://localhost:8000/train/lightgbm)
+          http_code=${response: -3}
+          echo "Response: $response"
+          if [ "$http_code" -ne 200 ]; then
+            echo "LightGBM training failed with status $http_code"
+            docker logs spy-backend
+            exit 1
+          fi
+
+      - name: Stop Docker container
+        if: always()
+        run: docker stop spy-backend
