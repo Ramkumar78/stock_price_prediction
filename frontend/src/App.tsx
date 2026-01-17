@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
-import { Container, Grid, Typography, Box, AppBar, Toolbar, Paper, Alert, Snackbar } from '@mui/material'
+import { Container, Grid, Typography, Box, AppBar, Toolbar, Alert, Snackbar } from '@mui/material'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
 import PredictionCard from './components/PredictionCard'
 import TrainingControl from './components/TrainingControl'
@@ -55,7 +55,7 @@ function App() {
   const handleDownloadData = async () => {
     setIsDownloading(true);
     try {
-      const response = await axios.post(`${API_URL}/data/refresh`);
+      await axios.post(`${API_URL}/data/refresh`);
       setMessage({ text: 'Data downloaded successfully!', type: 'success' });
     } catch (error) {
       setMessage({ text: 'Failed to download data.', type: 'error' });
@@ -107,7 +107,7 @@ function App() {
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Grid container spacing={3}>
           {/* Top Row: Prediction & Controls */}
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <PredictionCard
               prediction={prediction}
               probability={probability}
@@ -115,7 +115,7 @@ function App() {
               error={null}
             />
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid size={{ xs: 12, md: 6 }}>
             <TrainingControl
               onDownloadData={handleDownloadData}
               onGenerateFeatures={handleGenerateFeatures}
@@ -127,7 +127,7 @@ function App() {
           </Grid>
 
           {/* Bottom Row: Metrics & Details */}
-          <Grid item xs={12}>
+          <Grid size={12}>
             <MetricsDashboard metrics={metrics} />
           </Grid>
         </Grid>

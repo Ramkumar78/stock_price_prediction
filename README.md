@@ -84,11 +84,30 @@ pip install xgboost lightgbm catboost
 pip install scikit-learn matplotlib seaborn
 ```
 
-### 2. Download Data
+### 2. Docker Deployment
+
+The application works best when run as a full-stack Dockerized application. This spins up the backend API and the frontend dashboard.
+
+```bash
+# Build and run the application
+docker-compose up --build
+```
+
+Access the application:
+- **Dashboard**: http://localhost:3000
+- **API Documentation**: http://localhost:8000/docs
+
+### 3. Download Data (Manual / Docker)
+
+You can trigger data download from the dashboard UI or manually:
 
 ```bash
 # Download OHLCV data for SPY, VIX, TLT, DXY, GLD (2015-present)
-python download_data.py
+# If running locally:
+python -m app.core.download_data
+
+# If running via API:
+curl -X POST http://localhost:8000/data/refresh
 ```
 
 See [download_data.md](download_data.md) for details.
