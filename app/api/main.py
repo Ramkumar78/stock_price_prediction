@@ -12,6 +12,7 @@ import glob
 # Import core modules
 from app.core.download_data import download_asset_data, save_data, TICKERS, START_DATE
 from app.core.feature_engineering import create_all_features, load_data_for_features, create_target_variable
+from app.core.ensemble import SoftVotingEnsemble
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -214,7 +215,7 @@ async def predict(model: str = Query("lightgbm", enum=["lightgbm", "xgboost", "c
             from catboost import CatBoostClassifier
             cb = CatBoostClassifier()
             cb.load_model(model_file, format='json')
-            prob_up = cb.predict_proba(latest_data)[1]
+            prob_up = cb.predict_proba(latest_data)[0][1]
 
         prediction = "UP" if prob_up > 0.5 else "DOWN"
 
