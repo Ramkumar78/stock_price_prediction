@@ -69,6 +69,7 @@ import seaborn as sns
 import os
 from datetime import datetime
 import joblib
+import json
 
 # Configuration
 INPUT_FILE = 'output/spy_features_full.csv'
@@ -630,10 +631,16 @@ def main():
     # 10. Plot training curves for selected model
     plot_training_curves(evals_result_selected, output_dir=OUTPUT_DIR)
     
-    # 11. Save selected model
+    # 11. Save selected model and metrics
     model_path = os.path.join(OUTPUT_DIR, 'xgboost_model_selected_features.json')
     model_selected.save_model(model_path)
     print(f"\nSaved selected features model to {model_path}")
+
+    # Save metrics for the selected model (required for /metrics endpoint)
+    metrics_path = os.path.join(OUTPUT_DIR, 'metrics.json')
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics_selected, f, indent=2)
+    print(f"Saved metrics to {metrics_path}")
     
     # Save selected features list
     selected_features_path = os.path.join(OUTPUT_DIR, 'selected_features.txt')
