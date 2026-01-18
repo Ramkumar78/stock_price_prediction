@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi import FastAPI, HTTPException, Request, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
 import pandas as pd
 import os
 import json
+import uuid
 from typing import List, Dict, Any, Optional
 import logging
 import glob
@@ -12,6 +13,7 @@ import glob
 # Import core modules
 from app.core.download_data import download_asset_data, save_data, TICKERS, START_DATE
 from app.core.feature_engineering import create_all_features, load_data_for_features, create_target_variable
+from app.core.custom_pipeline import run_custom_pipeline
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -64,7 +66,34 @@ class MetricsResponse(BaseModel):
     model: str
     metrics: Dict[str, Any]
 
+class CustomTrainRequest(BaseModel):
+    ticker: str
+    model: str
+
+# In-memory job store
+custom_jobs = {}
+
 # --- Endpoints ---
+
+@app.post("/custom/train")
+async def start_custom_train(request: CustomTrainRequest, background_tasks: BackgroundTasks):
+    job_id = str(uuid.uuid4())
+    custom_jobs[job_id] = {
+        "status": "pending",
+        "ticker": request.ticker,
+        "model": request.model,
+        "progress": "Queued"
+    }
+
+    background_tasks.add_task(run_custom_pipeline, job_id, request.ticker, request.model, custom_jobs)
+
+    return {"job_id": job_id, "status": "started"}
+
+@app.get("/custom/status/{job_id}")
+async def get_custom_status(job_id: str):
+    if job_id not in custom_jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return custom_jobs[job_id]
 
 @app.post("/data/refresh", response_model=DataRefreshResponse)
 async def refresh_data():

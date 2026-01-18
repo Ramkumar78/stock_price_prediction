@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import {
   Container, Grid, Typography, Box, AppBar, Toolbar,
-  Alert, Snackbar, ThemeProvider, createTheme, CssBaseline, Stack
+  Alert, Snackbar, ThemeProvider, createTheme, CssBaseline, Stack, Tabs, Tab
 } from '@mui/material'
 import ShowChartIcon from '@mui/icons-material/ShowChart'
 import PredictionCard from './components/PredictionCard'
 import TrainingControl from './components/TrainingControl'
 import MetricsDashboard from './components/MetricsDashboard'
+import CustomTrain from './components/CustomTrain'
 
 // Dark Mode Theme
 const darkTheme = createTheme({
@@ -25,6 +26,7 @@ const darkTheme = createTheme({
 const API_URL = 'http://localhost:8000';
 
 function App() {
+  const [tabValue, setTabValue] = useState(0);
   const [selectedModel, setSelectedModel] = useState<string>('lightgbm');
 
   const [prediction, setPrediction] = useState<string | null>(null);
@@ -38,11 +40,17 @@ function App() {
 
   const [message, setMessage] = useState<{text: string, type: 'success' | 'error' | 'info'} | null>(null);
 
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
   // Fetch data when model selection changes
   useEffect(() => {
-    fetchMetrics();
-    fetchPrediction();
-  }, [selectedModel]);
+    if (tabValue === 0) {
+      fetchMetrics();
+      fetchPrediction();
+    }
+  }, [selectedModel, tabValue]);
 
   const fetchMetrics = async () => {
     try {
@@ -117,37 +125,45 @@ function App() {
               SPY Price Prediction AI
             </Typography>
           </Toolbar>
+          <Tabs value={tabValue} onChange={handleTabChange} centered textColor="primary" indicatorColor="primary">
+            <Tab label="SPY Dashboard" />
+            <Tab label="Custom Asset Lab" />
+          </Tabs>
         </AppBar>
 
         <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
-          <Grid container spacing={3}>
-            {/* Left Col: Controls & Prediction */}
-            <Grid size={{ xs: 12, md: 4 }}>
-              <Stack spacing={3}>
-                <TrainingControl
-                  selectedModel={selectedModel}
-                  onModelChange={setSelectedModel}
-                  onDownloadData={handleDownloadData}
-                  onGenerateFeatures={handleGenerateFeatures}
-                  onTrainModel={handleTrainModel}
-                  isDownloading={isDownloading}
-                  isGenerating={isGenerating}
-                  isTraining={isTraining}
-                />
-                <PredictionCard
-                  prediction={prediction}
-                  probability={probability}
-                  isLoading={isPredicting}
-                  modelName={selectedModel}
-                />
-              </Stack>
-            </Grid>
+          {tabValue === 0 ? (
+            <Grid container spacing={3}>
+              {/* Left Col: Controls & Prediction */}
+              <Grid size={{ xs: 12, md: 4 }}>
+                <Stack spacing={3}>
+                  <TrainingControl
+                    selectedModel={selectedModel}
+                    onModelChange={setSelectedModel}
+                    onDownloadData={handleDownloadData}
+                    onGenerateFeatures={handleGenerateFeatures}
+                    onTrainModel={handleTrainModel}
+                    isDownloading={isDownloading}
+                    isGenerating={isGenerating}
+                    isTraining={isTraining}
+                  />
+                  <PredictionCard
+                    prediction={prediction}
+                    probability={probability}
+                    isLoading={isPredicting}
+                    modelName={selectedModel}
+                  />
+                </Stack>
+              </Grid>
 
-            {/* Right Col: Dashboard */}
-            <Grid size={{ xs: 12, md: 8 }}>
-              <MetricsDashboard metrics={metrics} modelName={selectedModel} />
+              {/* Right Col: Dashboard */}
+              <Grid size={{ xs: 12, md: 8 }}>
+                <MetricsDashboard metrics={metrics} modelName={selectedModel} />
+              </Grid>
             </Grid>
-          </Grid>
+          ) : (
+            <CustomTrain />
+          )}
         </Container>
 
         <Snackbar
