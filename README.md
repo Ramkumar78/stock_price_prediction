@@ -4,17 +4,21 @@
 
 | Name                                    |    Stmts |     Miss |   Cover |   Missing |
 |---------------------------------------- | -------: | -------: | ------: | --------: |
-| app/api/main.py                         |      135 |       68 |     50% |80-82, 89, 107-109, 113-137, 153, 156, 166-229, 236-250 |
-| app/core/download\_data.py              |       48 |       30 |     38% |30-67, 81-90, 93 |
-| app/core/ensemble.py                    |       26 |       19 |     27% |19-20, 24-32, 44-55, 67-68 |
-| app/core/feature\_engineering.py        |      113 |       70 |     38% |120-136, 150-171, 190-195, 217-231, 236-332 |
-| app/core/price\_based\_features.py      |      110 |       41 |     63% |53, 56, 59, 63, 187-203, 208-221, 226-241, 250-269, 274-310 |
+| app/api/main.py                         |      149 |       23 |     85% |108-110, 117, 135-137, 181, 184, 208-209, 229-230, 237-246, 277-278 |
+| app/core/custom\_pipeline.py            |       73 |       17 |     77% |37, 94, 116-128, 147-149, 155-156, 171-175 |
+| app/core/download\_data.py              |       48 |       17 |     65% |41-42, 61-67, 81-90, 93 |
+| app/core/feature\_engineering.py        |      113 |       60 |     47% |138, 150-171, 217-231, 236-332 |
+| app/core/price\_based\_features.py      |      110 |       99 |     10% |43-65, 70-129, 134-182, 187-203, 208-221, 226-241, 250-269, 274-310 |
 | app/core/regime\_dependent\_features.py |       72 |       16 |     78% |169, 178, 185-186, 191-215 |
-| app/core/regime\_features.py            |       53 |       11 |     79% |   157-180 |
+| app/core/regime\_features.py            |       53 |       48 |      9% |32-128, 147-152, 157-180 |
 | app/core/technical\_features.py         |       75 |       16 |     79% |166, 175, 182-183, 188-212 |
 | app/core/volatility\_features.py        |       33 |       11 |     67% |     73-96 |
 | app/core/volume\_features.py            |       30 |       11 |     63% |    97-120 |
-| **TOTAL**                               |  **695** |  **293** | **58%** |           |
+| app/models/modelling\_catboost.py       |      275 |      275 |      0% |    63-676 |
+| app/models/modelling\_ensemble.py       |      227 |      227 |      0% |    38-490 |
+| app/models/modelling\_lightgbm.py       |      269 |      242 |     10% |114-134, 145-162, 181-223, 230-260, 267-316, 323-355, 388-464, 471-489, 496-510, 524-658, 662 |
+| app/models/modelling\_xgboost.py        |      280 |      252 |     10% |139-159, 170-187, 206-248, 256-287, 294-346, 353-385, 418-496, 504-522, 529-544, 558-693, 698 |
+| **TOTAL**                               | **1807** | **1314** | **27%** |           |
 
 
 ## Setup coverage badge
