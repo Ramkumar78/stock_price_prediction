@@ -4,8 +4,9 @@
 
 | Name                                    |    Stmts |     Miss |   Cover |   Missing |
 |---------------------------------------- | -------: | -------: | ------: | --------: |
-| app/api/main.py                         |      134 |       68 |     49% |79-81, 88, 106-108, 112-136, 152, 155, 165-228, 235-249 |
+| app/api/main.py                         |      135 |       68 |     50% |80-82, 89, 107-109, 113-137, 153, 156, 166-229, 236-250 |
 | app/core/download\_data.py              |       48 |       30 |     38% |30-67, 81-90, 93 |
+| app/core/ensemble.py                    |       26 |       19 |     27% |19-20, 24-32, 44-55, 67-68 |
 | app/core/feature\_engineering.py        |      113 |       70 |     38% |120-136, 150-171, 190-195, 217-231, 236-332 |
 | app/core/price\_based\_features.py      |      110 |       41 |     63% |53, 56, 59, 63, 187-203, 208-221, 226-241, 250-269, 274-310 |
 | app/core/regime\_dependent\_features.py |       72 |       16 |     78% |169, 178, 185-186, 191-215 |
@@ -13,7 +14,7 @@
 | app/core/technical\_features.py         |       75 |       16 |     79% |166, 175, 182-183, 188-212 |
 | app/core/volatility\_features.py        |       33 |       11 |     67% |     73-96 |
 | app/core/volume\_features.py            |       30 |       11 |     63% |    97-120 |
-| **TOTAL**                               |  **668** |  **274** | **59%** |           |
+| **TOTAL**                               |  **695** |  **293** | **58%** |           |
 
 
 ## Setup coverage badge
