@@ -524,6 +524,9 @@ def main():
     print("="*60)
     print("LIGHTGBM STOCK PREDICTION MODEL")
     print("="*60)
+
+    # Ensure output directory exists
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     
     # 1. Load data
     X, y, dates = load_and_prepare_data(INPUT_FILE)

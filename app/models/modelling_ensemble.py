@@ -491,6 +491,9 @@ def main():
     print("="*60)
     print("ENSEMBLE MODEL TRAINING")
     print("="*60)
+
+    # Ensure output directory exists
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
     
     # 1. Load selected features
     selected_features = load_selected_features(SELECTED_FEATURES_FILE)
