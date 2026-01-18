@@ -243,7 +243,7 @@ async def predict(model: str = Query("lightgbm", enum=["lightgbm", "xgboost", "c
             from catboost import CatBoostClassifier
             cb = CatBoostClassifier()
             cb.load_model(model_file, format='json')
-            prob_up = cb.predict_proba(latest_data)[1]
+            prob_up = cb.predict_proba(latest_data)[0][1]
 
         prediction = "UP" if prob_up > 0.5 else "DOWN"
 
