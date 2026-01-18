@@ -621,6 +621,12 @@ def main():
         for feat in selected_features:
             f.write(f"{feat}\n")
     print(f"Saved selected features list to {selected_features_path}")
+
+    # Save metrics for the selected model (important for API)
+    metrics_path = os.path.join(OUTPUT_DIR, 'metrics.json')
+    with open(metrics_path, 'w') as f:
+        json.dump(metrics_selected, f, indent=2)
+    print(f"Saved metrics to {metrics_path}")
     
     # ========== FINAL COMPARISON ==========
     print("\n" + "="*60)
