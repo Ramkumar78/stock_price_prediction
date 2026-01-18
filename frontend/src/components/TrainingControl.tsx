@@ -1,10 +1,15 @@
 import React from 'react';
-import { Card, CardContent, Typography, Button, Box, Stack, CircularProgress } from '@mui/material';
+import {
+  Card, CardContent, Typography, Button, Box, Stack, CircularProgress,
+  FormControl, InputLabel, Select, MenuItem, Divider
+} from '@mui/material';
 import CloudDownloadIcon from '@mui/icons-material/CloudDownload';
 import ModelTrainingIcon from '@mui/icons-material/ModelTraining';
 import FeaturedPlayListIcon from '@mui/icons-material/FeaturedPlayList';
 
 interface TrainingControlProps {
+  selectedModel: string;
+  onModelChange: (model: string) => void;
   onDownloadData: () => void;
   onGenerateFeatures: () => void;
   onTrainModel: () => void;
@@ -14,6 +19,8 @@ interface TrainingControlProps {
 }
 
 const TrainingControl: React.FC<TrainingControlProps> = ({
+  selectedModel,
+  onModelChange,
   onDownloadData,
   onGenerateFeatures,
   onTrainModel,
@@ -22,47 +29,79 @@ const TrainingControl: React.FC<TrainingControlProps> = ({
   isTraining,
 }) => {
   return (
-    <Card sx={{ minWidth: 275, p: 2 }}>
+    <Card sx={{ borderRadius: 4, boxShadow: 3 }}>
       <CardContent>
-        <Typography variant="h5" component="div" gutterBottom>
-          Pipeline Control
+        <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>
+          Control Panel
         </Typography>
-        <Stack spacing={2}>
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="body1">1. Data Collection</Typography>
+
+        <Stack spacing={3}>
+          {/* Step 1: Data */}
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary">Step 1: Data</Typography>
+              {isDownloading && <CircularProgress size={16} />}
+            </Box>
             <Button
-              variant="contained"
-              startIcon={isDownloading ? <CircularProgress size={20} color="inherit" /> : <CloudDownloadIcon />}
+              fullWidth
+              variant="outlined"
+              startIcon={<CloudDownloadIcon />}
               onClick={onDownloadData}
               disabled={isDownloading || isGenerating || isTraining}
             >
-              {isDownloading ? 'Downloading...' : 'Download Data'}
+              Refresh Market Data
             </Button>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="body1">2. Feature Engineering</Typography>
+          {/* Step 2: Features */}
+          <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary">Step 2: Engineering</Typography>
+              {isGenerating && <CircularProgress size={16} />}
+            </Box>
             <Button
-              variant="contained"
+              fullWidth
+              variant="outlined"
               color="secondary"
-              startIcon={isGenerating ? <CircularProgress size={20} color="inherit" /> : <FeaturedPlayListIcon />}
+              startIcon={<FeaturedPlayListIcon />}
               onClick={onGenerateFeatures}
               disabled={isDownloading || isGenerating || isTraining}
             >
-              {isGenerating ? 'Generating...' : 'Generate Features'}
+              Generate 115 Features
             </Button>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Typography variant="body1">3. Model Training</Typography>
+          <Divider />
+
+          {/* Step 3: Model */}
+          <Box>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>Step 3: AI Training</Typography>
+            <FormControl fullWidth size="small" sx={{ mb: 2 }}>
+              <InputLabel>Model Architecture</InputLabel>
+              <Select
+                value={selectedModel}
+                label="Model Architecture"
+                onChange={(e) => onModelChange(e.target.value)}
+                disabled={isTraining}
+              >
+                <MenuItem value="lightgbm">LightGBM (Recommended)</MenuItem>
+                <MenuItem value="xgboost">XGBoost</MenuItem>
+                <MenuItem value="catboost">CatBoost</MenuItem>
+                <MenuItem value="ensemble">Ensemble (Voting)</MenuItem>
+              </Select>
+            </FormControl>
+
             <Button
+              fullWidth
               variant="contained"
-              color="success"
+              color="primary"
+              size="large"
               startIcon={isTraining ? <CircularProgress size={20} color="inherit" /> : <ModelTrainingIcon />}
               onClick={onTrainModel}
               disabled={isDownloading || isGenerating || isTraining}
+              sx={{ boxShadow: 2 }}
             >
-              {isTraining ? 'Training...' : 'Train LightGBM'}
+              {isTraining ? 'Training Model...' : `Train ${selectedModel}`}
             </Button>
           </Box>
         </Stack>

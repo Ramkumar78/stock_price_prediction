@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel
@@ -6,23 +6,23 @@ import pandas as pd
 import os
 import json
 from typing import List, Dict, Any, Optional
-import glob
 import logging
+import glob
 
 # Import core modules
 from app.core.download_data import download_asset_data, save_data, TICKERS, START_DATE
-from app.core.feature_engineering import create_all_features, load_data_for_features, create_target_variable, remove_correlated_features
+from app.core.feature_engineering import create_all_features, load_data_for_features, create_target_variable
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="SPY Stock Prediction API", description="API for downloading data, generating features, and training models for SPY prediction.", version="0.1.0")
+app = FastAPI(title="SPY Stock Prediction API", version="0.2.0")
 
-# Security Hardening: CORS
+# --- Security & CORS ---
 origins = [
-    "http://localhost:5173", # Vite default
-    "http://localhost:3000", # React default
+    "http://localhost:5173",
+    "http://localhost:3000",
     "http://127.0.0.1:5173",
     "http://127.0.0.1:3000",
 ]
@@ -35,19 +35,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Security Hardening: Security Headers Middleware
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        # Added connect-src to allow frontend to talk to backend
+        # Added script-src and style-src to support React/Vite development
+        response.headers["Content-Security-Policy"] = "default-src 'self'; connect-src 'self' http://localhost:8000; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';"
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
 
+# --- Pydantic Models ---
 class DataRefreshResponse(BaseModel):
     message: str
     downloaded: List[str]
@@ -66,78 +64,54 @@ class MetricsResponse(BaseModel):
     model: str
     metrics: Dict[str, Any]
 
+# --- Endpoints ---
+
 @app.post("/data/refresh", response_model=DataRefreshResponse)
 async def refresh_data():
-    """
-    Downloads the latest OHLCV data for SPY, VIX, TLT, DXY, and GLD.
-    """
-    downloaded = []
     try:
+        downloaded = []
         for name, symbol in TICKERS.items():
             df = download_asset_data(symbol, name, START_DATE)
             if df is not None:
                 save_data(df, name)
                 downloaded.append(name)
-
         return {"message": "Data download complete.", "downloaded": downloaded}
     except Exception as e:
         logger.error(f"Error refreshing data: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/features/generate", response_model=FeatureGenerationResponse)
 async def generate_features():
-    """
-    Generates features from the downloaded data.
-    """
     try:
         data = load_data_for_features(data_dir='data')
-
         if data['spy'] is None:
              raise HTTPException(status_code=400, detail="SPY data not found. Please refresh data first.")
 
-        # Generate Features
         features = create_all_features(
-            spy=data['spy'],
-            vix=data['vix'],
-            tlt=data['tlt'],
-            dxy=data['dxy'],
-            gld=data['gld'],
+            spy=data['spy'], vix=data['vix'], tlt=data['tlt'], dxy=data['dxy'], gld=data['gld'],
             include_regime_dependent=True
         )
-
-        # Create target variable
         y = create_target_variable(data['spy'], forward_days=3)
-
-        # Combine
         final_df = pd.concat([features, y.rename('target')], axis=1)
 
-        # Save
         output_dir = 'output'
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-
-        output_path = os.path.join(output_dir, 'spy_features_full.csv')
-        final_df.to_csv(output_path)
+        os.makedirs(output_dir, exist_ok=True)
+        final_df.to_csv(os.path.join(output_dir, 'spy_features_full.csv'))
 
         return {
             "message": "Features generated successfully.",
             "features_count": len(features.columns),
             "data_shape": final_df.shape
         }
-    except HTTPException:
-        raise
     except Exception as e:
         logger.error(f"Error generating features: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/train/{model_type}")
 async def train_model(model_type: str):
-    """
-    Triggers training for the specified model type.
-    """
-    import subprocess
-    import sys
+    import subprocess, sys
 
+    # Map friendly names to scripts
     script_map = {
         "xgboost": "app/models/modelling_xgboost.py",
         "lightgbm": "app/models/modelling_lightgbm.py",
@@ -146,100 +120,130 @@ async def train_model(model_type: str):
     }
 
     if model_type not in script_map:
-        raise HTTPException(status_code=400, detail=f"Invalid model type. Choose from {list(script_map.keys())}")
-
-    script_path = script_map[model_type]
+        raise HTTPException(status_code=400, detail=f"Invalid model. Options: {list(script_map.keys())}")
 
     try:
-        # Using subprocess to run the script
-        result = subprocess.run([sys.executable, script_path], capture_output=True, text=True, cwd=os.getcwd())
+        # Run the training script
+        logger.info(f"Starting training for {model_type}...")
+        result = subprocess.run([sys.executable, script_map[model_type]], capture_output=True, text=True, cwd=os.getcwd())
 
         if result.returncode != 0:
-             logger.error(f"Training failed for {model_type}: {result.stderr}")
-             raise HTTPException(status_code=500, detail="Training failed. Check server logs.")
+             logger.error(f"Training failed: {result.stderr}")
+             raise HTTPException(status_code=500, detail=f"Training script failed: {result.stderr}")
 
-        return {"message": f"{model_type} model trained successfully.", "output": result.stdout}
-
-    except HTTPException:
-        raise
+        return {"message": f"{model_type.capitalize()} model trained successfully.", "output": result.stdout}
     except Exception as e:
-        logger.error(f"Error training model {model_type}: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/predict", response_model=PredictResponse)
-async def predict():
+async def predict(model: str = Query("lightgbm", enum=["lightgbm", "xgboost", "catboost", "ensemble"])):
     """
-    Loads the saved LightGBM model (best performing) and returns prediction for next 3 days.
+    Predicts using the specified model. Defaults to LightGBM.
     """
     import lightgbm as lgb
-    import numpy as np
+    import xgboost as xgb
+    import joblib
 
-    model_path_json = 'output/models/lightgbm/lightgbm_model_selected_features.json'
-    features_path = 'output/models/lightgbm/selected_features.txt'
+    # Define paths based on model selection
+    base_path = f'output/models/{model}'
+
+    # Handle filename variations based on your repo structure
+    if model == 'ensemble':
+        model_file = os.path.join(base_path, 'ensemble_model.pkl')
+    elif model == 'catboost':
+        # CatBoost specific handling if needed, usually .json or .cbm
+        model_file = os.path.join(base_path, f'{model}_model_selected_features.json')
+    else:
+        model_file = os.path.join(base_path, f'{model}_model_selected_features.json')
+
+    features_file = os.path.join(base_path, 'selected_features.txt')
     data_path = 'output/spy_features_full.csv'
 
-    if not os.path.exists(model_path_json) or not os.path.exists(features_path):
-         raise HTTPException(status_code=404, detail="Model or features file not found. Train the model first.")
+    if not os.path.exists(model_file):
+         raise HTTPException(status_code=404, detail=f"Model file not found for {model}. Please train it first.")
 
     try:
-        # Load model
-        model = lgb.Booster(model_file=model_path_json)
-
-        # Load required features
-        with open(features_path, 'r') as f:
-            required_features = [line.strip() for line in f.readlines()]
-
-        # Load data
-        if not os.path.exists(data_path):
-             raise HTTPException(status_code=404, detail="Features data not found.")
-
+        # Load Data
         df = pd.read_csv(data_path)
         if 'Date' in df.columns:
             df['Date'] = pd.to_datetime(df['Date'])
             df.set_index('Date', inplace=True)
 
-        # Get latest data
-        # Ensure we have the required features
-        missing_features = [f for f in required_features if f not in df.columns]
-        if missing_features:
-             logger.error(f"Missing features in data: {missing_features}")
-             raise HTTPException(status_code=500, detail="Internal Server Error: Data mismatch.")
+        # 1. Load Features List (if applicable)
+        required_features = []
+        if os.path.exists(features_file):
+            with open(features_file, 'r') as f:
+                required_features = [line.strip() for line in f.readlines()]
+        else:
+            # Fallback for ensemble or full models if txt doesn't exist
+            required_features = df.columns.tolist()
+            if 'target' in required_features: required_features.remove('target')
 
-        latest = df[required_features].iloc[-1:]
+        # 2. Prepare Input Data
+        # Ensure we have the required features in the dataframe
+        available_features = [f for f in required_features if f in df.columns]
+        if len(available_features) != len(required_features):
+            missing = set(required_features) - set(df.columns)
+            logger.warning(f"Missing features in data for prediction: {missing}")
+            # Depending on model, this might crash or work.
+            # We proceed with what we have if the model allows, but usually we should fail or fill.
+            # For simplicity, we just select what is available and hope order is handled by model or names.
+            # LightGBM/XGBoost by JSON usually rely on feature names if loaded that way, or order.
+            # If using sklearn wrapper interface, they often require strict order/columns.
 
-        # Predict
-        prob_up = model.predict(latest)[0]
+        latest_data = df[required_features].iloc[-1:]
+
+        # 3. Predict based on Model Type
+        prob_up = 0.0
+
+        if model == 'lightgbm':
+            booster = lgb.Booster(model_file=model_file)
+            prob_up = booster.predict(latest_data)[0]
+
+        elif model == 'xgboost':
+            reg = xgb.XGBClassifier()
+            reg.load_model(model_file)
+            prob_up = reg.predict_proba(latest_data)[0][1] # Probability of class 1
+
+        elif model == 'ensemble':
+            ensemble = joblib.load(model_file)
+            # Ensemble likely expects a specific input format, ensure it matches training
+            prob_up = ensemble.predict_proba(latest_data)[0][1]
+
+        elif model == 'catboost':
+            from catboost import CatBoostClassifier
+            cb = CatBoostClassifier()
+            cb.load_model(model_file, format='json')
+            prob_up = cb.predict_proba(latest_data)[1]
+
         prediction = "UP" if prob_up > 0.5 else "DOWN"
 
         return {
             "prediction": prediction,
             "probability": float(prob_up),
-            "model_used": "LightGBM (Selected Features)"
+            "model_used": model.capitalize()
         }
-    except HTTPException:
-        raise
     except Exception as e:
-        logger.error(f"Error predicting: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        logger.error(f"Prediction error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/metrics", response_model=MetricsResponse)
-async def get_metrics():
+async def get_metrics(model: str = Query("lightgbm", enum=["lightgbm", "xgboost", "catboost", "ensemble"])):
     """
-    Returns the metrics for the best model.
+    Returns metrics for the specified model.
     """
-    metrics_path = 'output/models/lightgbm/metrics.json'
+    metrics_path = f'output/models/{model}/metrics.json'
 
     if not os.path.exists(metrics_path):
-         raise HTTPException(status_code=404, detail="Metrics not found.")
+         raise HTTPException(status_code=404, detail=f"Metrics not found for {model}. Train it first.")
 
     try:
         with open(metrics_path, 'r') as f:
             metrics = json.load(f)
 
         return {
-            "model": "LightGBM",
+            "model": model.capitalize(),
             "metrics": metrics
         }
     except Exception as e:
-        logger.error(f"Error getting metrics: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail="Error loading metrics")
