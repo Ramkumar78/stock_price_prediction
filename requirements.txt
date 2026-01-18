@@ -11,3 +11,8 @@ scikit-learn
 python-multipart
 httpx
 seaborn
+pytest
+pytest-cov
+pytest-bdd
+pytest-asyncio
+pytest-mock
